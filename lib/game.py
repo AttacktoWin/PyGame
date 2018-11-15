@@ -95,20 +95,27 @@ class World:
             [
                 [
                     pygame.image.load('assets/rock1.png'),
-                    (200, -500)
+                    [200, -500]
                 ],
                 [
                     pygame.image.load('assets/rock2.png'),
-                    (750, -800)
+                    [750, -800]
                 ]
             ], #assets
-            0 #timer
+            0, #timer
+            60000 #maxTimer (length of map)
         ]
+
+        for asset in self.map[1]:
+            asset.append(asset[0].get_rect())
+            asset[2] = asset[2].move(asset[1][0], asset[1][1])
 
     def loop(self):
 
         for asset in self.map[1]:
-            pass
+            asset[2] = asset[2].move(0, 1)
+            if asset[2].bottom > 0 and asset[2].top < height:
+                screen.blit(asset[0], asset[2])
 
         for proj in self.shots:
             proj.logic()
