@@ -4,16 +4,16 @@ pygame.init()
 pygame.font.init()
 size = width, height = 1000, 640
 
-# FPS COUNTER
-def show_fps(window, clock):
-    f = pygame.font.Font(None, 10)
-    fps_overlay = f.render(str(math.floor(clock.get_fps())), True, (255, 255, 255))
-    window.blit(fps_overlay, (0,0))
+# # FPS COUNTER
+# def show_fps(window, clock):
+#     f = pygame.font.Font(None, 10)
+#     fps_overlay = f.render(str(math.floor(clock.get_fps())), True, (255, 255, 255))
+#     window.blit(fps_overlay, (0,0))
 
-clock = pygame.time.Clock()
-FPS = 1000
+# clock = pygame.time.Clock()
+# FPS = 1000
 
-screen = pygame.display.set_mode(size)
+screen = pygame.display.set_mode(size, pygame.FULLSCREEN)
 
 class Ship:
     def __init__(self, sprite, speed):
@@ -265,6 +265,7 @@ class Scene:
 
 title = True
 playing = False
+pause = False
 gameOver = False
 cutscene = False
 
@@ -293,8 +294,8 @@ while title:
         playing = True
         title = False
 
-    show_fps(screen, clock)
-    clock.tick(FPS)
+    # show_fps(screen, clock)
+    # clock.tick(FPS)
 
     pygame.display.flip()
 
@@ -302,6 +303,11 @@ while playing:
         for event in pygame.event.get():
             if event.type == pygame.QUIT: sys.exit()
         screen.fill(world.map[0])
+
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_ESCAPE]:
+            pause = True
+            playing = False
 
         world.loop()
         world.display()
@@ -312,18 +318,35 @@ while playing:
             gameOver = True
             playing = False
 
-        show_fps(screen, clock)
-        clock.tick(FPS)
+        # show_fps(screen, clock)
+        # clock.tick(FPS)
         
         pygame.display.flip()
+
+while pause:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT: sys.exit()
+
+    keys = pygame.key.get_pressed()
+    if keys[pygame.K_ESCAPE]:
+        playing = True
+        pause = False
+
+    screen.fill(world.map[0])
+
+    world.display()
+    ship.display()
+    # screen.fill((0,0,0,60))
+
+    pygame.display.flip()
 
 while cutscene:
         for event in pygame.event.get():
             if event.type == pygame.QUIT: sys.exit()
         screen.fill(world.map[0])
 
-        show_fps(screen, clock)
-        clock.tick(FPS)
+        # show_fps(screen, clock)
+        # clock.tick(FPS)
     
 
 while gameOver:
@@ -332,8 +355,8 @@ while gameOver:
     screen.fill((0,0,0))
     screen.blit(darkSouls, darkSouls.get_rect())
 
-    show_fps(screen, clock)
-    clock.tick(FPS)
+    # show_fps(screen, clock)
+    # clock.tick(FPS)
 
     pygame.display.flip()
     
