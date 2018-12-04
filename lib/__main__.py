@@ -1,7 +1,17 @@
-import sys, pygame
+import sys, math, random, pygame
+
 pygame.init()
 pygame.font.init()
 size = width, height = 1000, 640
+
+# FPS COUNTER
+def show_fps(window, clock):
+    f = pygame.font.Font(None, 10)
+    fps_overlay = f.render(str(math.floor(clock.get_fps())), True, (255, 255, 255))
+    window.blit(fps_overlay, (0,0))
+
+clock = pygame.time.Clock()
+FPS = 1000
 
 screen = pygame.display.set_mode(size)
 
@@ -61,6 +71,16 @@ class Ship:
         for hp in range(self.health):
             screen.blit(self.healthBox, pygame.Rect(30 + (hp * 22), 40, 15, 20))
 
+        if self.health < 1:
+            playing = False
+            gameOver = True
+
+    def display(self):
+        screen.blit(self.sprite, self.rect)
+
+        for proj in self.shots:
+            proj.display()
+
     def fire(self):
         if not self.shot:
             self.shots.append(Shot(self.rect.x + (self.rect.width/2) - 5, self.rect.y - 5, (0, -2), pygame.image.load('assets/shot.png'), "player"))
@@ -110,6 +130,13 @@ class debugEnemy:
         if self.speed[0] < -self.maxSpeed: self.speed[0] = -self.maxSpeed
         if self.speed[1] < -self.maxSpeed: self.speed[1] = -self.maxSpeed
 
+        if self.speed[0] == 0:
+            if math.floor(random.random() * 2) == 0: self.speed[0] = -0.75
+            else: self.speed[0] = 0.75
+        if self.speed[1] == 0:
+            if math.floor(random.random() * 2) == 0: self.speed[1] = -0.75
+            else: self.speed[1] = 0.75
+
         if self.shot:
             self.shotTimer += 1
             if self.shotTimer > self.fireRate:
@@ -121,6 +148,7 @@ class debugEnemy:
         if self.health < 1:
             world.enemies.remove(self)
 
+    def display(self):
         screen.blit(self.sprite, self.rect)
 
     def fire(self):
@@ -158,6 +186,7 @@ class Shot:
                 ship.health -= 1
                 world.shots.remove(self)
 
+    def display(self):
         screen.blit(self.sprite, self.rect)
 
 class World:
@@ -193,8 +222,7 @@ class World:
 
         for asset in self.map[1]:
             asset[2] = asset[2].move(0, 1)
-            if asset[2].bottom > 0 and asset[2].top < height:
-                screen.blit(asset[0], asset[2])
+            
 
         for proj in self.shots:
             proj.logic()
@@ -207,21 +235,51 @@ class World:
 
         self.updateTime()
 
+    def display(self):
+        for asset in self.map[1]:
+            asset[2] = asset[2].move(0, 1)
+            if asset[2].bottom > 0 and asset[2].top < height:
+                screen.blit(asset[0], asset[2])
+
+        for proj in self.shots:
+            proj.display()
+
+        for enemy in self.enemies:
+            enemy.display()
+
     def updateTime(self):
         if self.debug:
             self.debugTimer += 1
 
         self.map[2] += 1
 
+class Scene:
+    def __init__(self, steps):
+        self.steps = steps
+        self.frames = 0
+    def loop(self):
+        for step in self.steps:
+            if self.frames > step[2]: continue
+            else: step[0].rect = step[0].rect.move((step[1][0] / step[2]), (step[1][1] / step[2]))
+        self.frames += 1
+
 title = True
 playing = False
+gameOver = False
 cutscene = False
 
 
 ship = Ship(pygame.image.load('assets/ship.png'), [0,0])
 
-
 world = World(True, 'Debug')
+
+darkSouls = pygame.image.load('assets/gameOverTemp.jpg')
+
+currentScene = (
+    ship,
+    (0, 150),
+    120
+)
 
 while title:
     for event in pygame.event.get():
@@ -235,6 +293,9 @@ while title:
         playing = True
         title = False
 
+    show_fps(screen, clock)
+    clock.tick(FPS)
+
     pygame.display.flip()
 
 while playing:
@@ -243,9 +304,36 @@ while playing:
         screen.fill(world.map[0])
 
         world.loop()
+        world.display()
         ship.loop()
+        ship.display()
         
+        if ship.health < 1:
+            gameOver = True
+            playing = False
+
+        show_fps(screen, clock)
+        clock.tick(FPS)
         
-        screen.blit(ship.sprite, ship.rect)
         pygame.display.flip()
 
+while cutscene:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT: sys.exit()
+        screen.fill(world.map[0])
+
+        show_fps(screen, clock)
+        clock.tick(FPS)
+    
+
+while gameOver:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT: sys.exit()
+    screen.fill((0,0,0))
+    screen.blit(darkSouls, darkSouls.get_rect())
+
+    show_fps(screen, clock)
+    clock.tick(FPS)
+
+    pygame.display.flip()
+    
