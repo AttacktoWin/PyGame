@@ -13,7 +13,7 @@ size = width, height = 1000, 640
 # clock = pygame.time.Clock()
 # FPS = 1000
 
-screen = pygame.display.set_mode(size, pygame.FULLSCREEN)
+screen = pygame.display.set_mode(size, pygame.FULLSCREEN | pygame.HWSURFACE)
 
 class Ship:
     def __init__(self, sprite, speed):
@@ -208,10 +208,30 @@ class World:
                 [
                     pygame.image.load('assets/rock2.png'),
                     [750, -800]
+                ],
+                [
+                    pygame.image.load('assets/rock1.png'),
+                    [400, -1150]
+                ],
+                [
+                    pygame.image.load('assets/rock1.png'),
+                    [900, -1400]
+                ],
+                [
+                    pygame.image.load('assets/rock2.png'),
+                    [200, -2300]
+                ],
+                [
+                    pygame.image.load('assets/rock1.png'),
+                    [600, -3000]
+                ],
+                [
+                    pygame.image.load('assets/rock2.png'),
+                    [200, -4250]
                 ]
             ], #assets
             0, #timer
-            6000 #maxTimer (length of map)
+            60000 #maxTimer (length of map)
         ]
 
         for asset in self.map[1]:
@@ -266,7 +286,7 @@ cutscene = False
 
 ship = Ship(pygame.image.load('assets/ship.png'), [0,0])
 
-world = World(True, 'Debug')
+world = World(True, 'Debug Level')
 
 darkSouls = pygame.image.load('assets/gameOverTemp.jpg')
 
@@ -320,14 +340,14 @@ while playing:
         ship.loop()
         
         if pause:
-            s = pygame.Surface(size)
+            s = pygame.Surface(size, pygame.HWSURFACE)
             s.set_alpha(120)
             s.fill((0,0,0))
             f = pygame.font.Font(None, 40)
             level = f.render(world.level, True, (255,255,255))
-            progress = f.render(str(math.floor(world.map[2]/world.map[3])) + "% Complete", True, (255,255,255))
-            s.blit(level, (460, 250))
-            s.blit(progress, (420, 300))
+            progress = f.render(str(math.floor((world.map[2]/world.map[3]) * 100)) + "% Complete", True, (255,255,255))
+            s.blit(level, (500 - (level.get_width()/2), 250))
+            s.blit(progress, (500 - (progress.get_width()/2), 300))
             screen.blit(s, (0,0))
 
         if ship.health < 1:
