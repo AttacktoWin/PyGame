@@ -93,6 +93,7 @@ class debugEnemy:
         self.rect = pygame.Rect(120, 5, 50, 50)
         self.sprite = pygame.image.load('assets/enemyShip.png')
         self.coeff = coeff
+        self.movement = 1
         self.speed = [0, 0]
         self.maxSpeed = 1.25 * coeff
         self.health = 10
@@ -103,9 +104,9 @@ class debugEnemy:
 
     def loop(self):
         if self.rect.x + self.rect.width < ship.rect.x:
-            self.speed[0] += 0.5 * self.coeff
+            self.speed[0] += 0.5 * self.coeff * self.movement
         if self.rect.x > ship.rect.x + ship.rect.width:
-            self.speed[0] -= 0.5 * self.coeff
+            self.speed[0] -= 0.5 * self.coeff * self.movement
 
         if self.rect.y > 5:
             self.speed[1] -= 0.5 * self.coeff
@@ -131,17 +132,6 @@ class debugEnemy:
         if self.speed[1] > self.maxSpeed: self.speed[1] = self.maxSpeed
         if self.speed[0] < -self.maxSpeed: self.speed[0] = -self.maxSpeed
         if self.speed[1] < -self.maxSpeed: self.speed[1] = -self.maxSpeed
-
-        if self.speed[0] == 0:
-            if math.floor(random.random() * 2) == 0:
-                self.speed[0] = -0.75 * self.coeff
-            else:
-                self.speed[0] = 0.75 * self.coeff
-        if self.speed[1] == 0:
-            if math.floor(random.random() * 2) == 0:
-                self.speed[1] = -0.75 * self.coeff
-            else:
-                self.speed[1] = 0.75 * self.coeff
 
         if self.shot:
             self.shotTimer += world.coeff
