@@ -11,7 +11,7 @@ size = width, height = 1000, 640
 #     window.blit(fps_overlay, (0,0))
 
 clock = pygame.time.Clock()
-FPS = 200
+FPS = 300
 
 screen = pygame.display.set_mode(size, pygame.FULLSCREEN | pygame.HWSURFACE)
 
@@ -23,7 +23,7 @@ class Ship:
         self.doLogic = True
         self.coeff = coeff
         self.speed = speed
-        self.maxSpeed = 1.25 * coeff
+        self.maxSpeed = coeff
         self.health = 10
         self.healthBox = pygame.image.load('assets/health.png')
         self.fireRate = 40 * coeff
@@ -34,22 +34,22 @@ class Ship:
     def loop(self):
         keys = pygame.key.get_pressed()
         if self.doLogic:
-            if keys[pygame.K_d] or keys[pygame.K_RIGHT]: self.speed[0] += 0.75 * self.coeff
-            if keys[pygame.K_a] or keys[pygame.K_LEFT]: self.speed[0] -= 0.75 * self.coeff
-            if keys[pygame.K_s] or keys[pygame.K_DOWN]: self.speed[1] += 0.75 * self.coeff
-            if keys[pygame.K_w] or keys[pygame.K_UP]: self.speed[1] -= 0.75 * self.coeff
+            if keys[pygame.K_d] or keys[pygame.K_RIGHT]: self.speed[0] += 0.5 * self.coeff
+            if keys[pygame.K_a] or keys[pygame.K_LEFT]: self.speed[0] -= 0.5 * self.coeff
+            if keys[pygame.K_s] or keys[pygame.K_DOWN]: self.speed[1] += 0.5 * self.coeff
+            if keys[pygame.K_w] or keys[pygame.K_UP]: self.speed[1] -= 0.5 * self.coeff
 
             if keys[pygame.K_SPACE]: self.fire()
         
             self.rect = self.rect.move(self.speed)
             if self.speed[0] < 0:
-                self.speed[0] += 0.25 * self.coeff
+                self.speed[0] += 0.125 * self.coeff
             if self.speed[1] < 0:
-                self.speed[1] += 0.25 * self.coeff
+                self.speed[1] += 0.125 * self.coeff
             if self.speed[0] > 0:
-                self.speed[0] -= 0.25 * self.coeff
+                self.speed[0] -= 0.125 * self.coeff
             if self.speed[1] > 0:
-                self.speed[1] -= 0.25 * self.coeff
+                self.speed[1] -= 0.125 * self.coeff
 
             if self.rect.left < 0: self.rect = self.rect.move(-self.rect.left, 0)
             if self.rect.right > width: self.rect = self.rect.move(width - self.rect.right, 0)
@@ -95,8 +95,10 @@ class debugEnemy:
         self.coeff = coeff
         self.movement = 1
         self.speed = [0, 0]
+        self.maxSpeedVal = 1.25
         self.maxSpeed = 1.25 * coeff
         self.health = 10
+        self.fireRateVal = 40
         self.fireRate = 40 * coeff
         self.shot = False
         self.shots = []
@@ -163,24 +165,20 @@ class Shot:
         self.rect = self.rect.move(self.speed[0] * world.coeff, self.speed[1] * world.coeff)
 
         if self.target == "player":
-            if self.rect.x < 0 or self.rect.x > width:
+            if self.rect.x < 0 or self.rect.x > width or self.rect.y < 0 or self.rect.y > height:
                 ship.shots.remove(self)
-            if self.rect.y < 0 or self.rect.y > height:
-                ship.shots.remove(self)
-
-            for enemy in world.enemies:
-                if self.rect.colliderect(enemy.rect):
-                    enemy.health -= 1
-                    ship.shots.remove(self)
+            else:
+                for enemy in world.enemies:
+                    if self.rect.colliderect(enemy.rect):
+                        enemy.health -= 1
+                        ship.shots.remove(self)
         else:
-            if self.rect.x < 0 or self.rect.x > width:
+            if self.rect.x < 0 or self.rect.x > width or self.rect.y < 0 or self.rect.y > height:
                 world.shots.remove(self)
-            if self.rect.y < 0 or self.rect.y > height:
-                world.shots.remove(self)
-
-            if self.rect.colliderect(ship.rect):
-                ship.health -= 1
-                world.shots.remove(self)
+            else:
+                if self.rect.colliderect(ship.rect):
+                    ship.health -= 1
+                    world.shots.remove(self)
 
     def display(self):
         screen.blit(self.sprite, self.rect)
@@ -195,6 +193,7 @@ class World:
         self.gameOverTimer = 0
         self.shots = []
         self.enemies = []
+        self.warning = pygame.image.load('assets/warning.png')
         self.level = level
         self.map = [
             (15, 50, 255), #color
@@ -229,7 +228,10 @@ class World:
                 ]
             ], #assets
             0, #timer
-            60000 * self.coeff #maxTimer (length of map)
+            60000 * self.coeff, #maxTimer (length of map)
+            [
+                (6000 * self.coeff, debugEnemy(self.coeff))
+            ]
         ]
 
         for asset in self.map[1]:
@@ -254,14 +256,32 @@ class World:
             if self.doLogic: enemy.loop()
             enemy.display()
 
-        if self.debug and self.debugTimer%(self.coeff * 100) == 0:
-            self.shots.append(Shot(0, 0, (1, 1), pygame.image.load('assets/enemyShot.png'), 'world'))
+        for spawn in self.map[4]:
+            if self.map[2] > spawn[0] - (300 * self.coeff) and self.map[2] < spawn[0]:
+                warningRect = self.warning.get_rect().move(spawn[1].rect.x, spawn[1].rect.y)
+                screen.blit(self.warning, warningRect)
+            if self.map[2] > spawn[0]:
+                self.enemies.append(spawn[1])
+                self.map[4].remove(spawn)
+
+        # if self.debug and self.debugTimer%(self.coeff * 300) == 0:
+        #     self.shots.append(Shot(0, 0, (1, 1), pygame.image.load('assets/enemyShot.png'), 'world'))
 
         if self.doLogic: self.updateTime()
 
     def updateTime(self):
         if self.debug:
             self.debugTimer += self.coeff
+
+        if ship.coeff != self.coeff:
+            ship.coeff = self.coeff
+            ship.maxSpeed = self.coeff
+            ship.fireRate = 40 * self.coeff
+
+            for enemy in self.enemies:
+                enemy.coeff = self.coeff
+                enemy.maxSpeed = enemy.maxSpeedVal * self.coeff
+                enemy.fireRate = enemy.fireRateVal * self.coeff
 
         self.map[2] += self.coeff
 
@@ -306,8 +326,8 @@ def changeEngine():
             playing = True
             title = False
             
-            ship = Ship(pygame.image.load('assets/ship.png'), [0,0], clock.tick(FPS))
             world = World(True, 'Debug Level')
+            ship = Ship(pygame.image.load('assets/ship.png'), [0,0], world.coeff)
             currentScene = (
                 ship,
                 (0, 150),
