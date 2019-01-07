@@ -26,7 +26,7 @@ class Ship:
         self.maxSpeed = coeff
         self.health = 10
         self.healthBox = pygame.image.load('assets/health.png')
-        self.fireRate = 40 * coeff
+        self.fireRate = 125
         self.shot = False
         self.shots = []
         self.shotTimer = 0
@@ -98,10 +98,8 @@ class debugEnemy:
         self.maxSpeedVal = 1.25
         self.maxSpeed = 1.25 * coeff
         self.health = 10
-        self.fireRateVal = 40
-        self.fireRate = 40 * coeff
+        self.fireRate = 125
         self.shot = False
-        self.shots = []
         self.shotTimer = 0
 
     def loop(self):
@@ -130,13 +128,15 @@ class debugEnemy:
         if self.rect.top < 0: self.rect =  self.rect.move(0, -self.rect.top)
         if self.rect.bottom > height: self.rect = self.rect.move(0, height - self.rect.bottom)
 
+        self.maxSpeed = self.maxSpeedVal * self.coeff
+
         if self.speed[0] > self.maxSpeed: self.speed[0] = self.maxSpeed
         if self.speed[1] > self.maxSpeed: self.speed[1] = self.maxSpeed
         if self.speed[0] < -self.maxSpeed: self.speed[0] = -self.maxSpeed
         if self.speed[1] < -self.maxSpeed: self.speed[1] = -self.maxSpeed
 
         if self.shot:
-            self.shotTimer += world.coeff
+            self.shotTimer += self.coeff
             if self.shotTimer > self.fireRate:
                 self.shotTimer = 0
                 self.shot = False
@@ -153,6 +153,53 @@ class debugEnemy:
         if not self.shot:
             world.shots.append(Shot(self.rect.x + (self.rect.width/2) - 5, self.rect.y - 5, (0, 2), pygame.image.load('assets/enemyShot.png'), "enemy"))
         self.shot = True    
+
+class debugFlier:
+    def __init__(self, coeff, direction):
+        if direction > 0:
+            self.rect = pygame.Rect(0, height - 25, 25, 25)
+        else:
+            self.rect = pygame.Rect(width - 25, height - 25, 25, 25)
+        self.sprite = pygame.image.load('assets/enemyFlier.png')
+        self.coeff = coeff
+        self.direction = direction
+        self.life = 0
+        self.speed = [0, 0]
+        self.health = 1
+        self.fireRate = 100
+        self.shot = False
+        self.shotTimer = 0
+
+    def loop(self):
+        if self.life < 1000:
+            self.speed = [0.5 * self.coeff * self.direction, -0.5 * self.coeff]
+        else:
+            self.speed = [0.5 * self.coeff * self.direction, 0]
+            if self.rect.left > width or self.rect.right < 0:
+                world.enemies.remove(self)
+
+        self.rect = self.rect.move(self.speed)
+
+        self.fire()
+
+        if self.shot:
+            self.shotTimer += self.coeff
+            if self.shotTimer > self.fireRate:
+                self.shotTimer = 0
+                self.shot = False
+
+        self.life += self.coeff
+
+        if self.health < 1:
+            world.enemies.remove(self)
+
+    def display(self):
+        screen.blit(self.sprite, self.rect)
+
+    def fire(self):
+        if not self.shot:
+            world.shots.append(Shot(self.rect.x + (self.rect.width/2) - 5, self.rect.y - 5, (0, 1.5), pygame.image.load('assets/enemyShot.png'), "enemy"))
+        self.shot = True
 
 class Shot:
     def __init__(self, x, y, speed, sprite, target):
@@ -172,6 +219,7 @@ class Shot:
                     if self.rect.colliderect(enemy.rect):
                         enemy.health -= 1
                         ship.shots.remove(self)
+                        break
         else:
             if self.rect.x < 0 or self.rect.x > width or self.rect.y < 0 or self.rect.y > height:
                 world.shots.remove(self)
@@ -228,9 +276,14 @@ class World:
                 ]
             ], #assets
             0, #timer
-            60000 * self.coeff, #maxTimer (length of map)
+            120000, #maxTimer (length of map)
             [
-                (6000 * self.coeff, debugEnemy(self.coeff))
+                (10000, debugFlier(self.coeff, 1)),
+                (10100, debugFlier(self.coeff, 1)),
+                (10200, debugFlier(self.coeff, 1)),
+                (10000, debugFlier(self.coeff, -1)),
+                (10100, debugFlier(self.coeff, -1)),
+                (10200, debugFlier(self.coeff, -1))
             ]
         ]
 
@@ -257,7 +310,7 @@ class World:
             enemy.display()
 
         for spawn in self.map[4]:
-            if self.map[2] > spawn[0] - (300 * self.coeff) and self.map[2] < spawn[0]:
+            if self.map[2] > spawn[0] - (350 * self.coeff) and self.map[2] < spawn[0]:
                 warningRect = self.warning.get_rect().move(spawn[1].rect.x, spawn[1].rect.y)
                 screen.blit(self.warning, warningRect)
             if self.map[2] > spawn[0]:
@@ -276,12 +329,9 @@ class World:
         if ship.coeff != self.coeff:
             ship.coeff = self.coeff
             ship.maxSpeed = self.coeff
-            ship.fireRate = 40 * self.coeff
 
             for enemy in self.enemies:
                 enemy.coeff = self.coeff
-                enemy.maxSpeed = enemy.maxSpeedVal * self.coeff
-                enemy.fireRate = enemy.fireRateVal * self.coeff
 
         self.map[2] += self.coeff
 
